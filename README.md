@@ -1,5 +1,7 @@
 jscollect
 =========
+JS and CSS on-the-fly file merger
+```
 Usage: jscollectd.js [OPTION]... [FILE]...
 Combines files referenced in FILEs into one big script or style.
 Can be used on separate files or in server mode.
