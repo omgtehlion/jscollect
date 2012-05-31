@@ -1,0 +1,30 @@
+{
+    "name": "jscollect",
+    "description": "JS and CSS on-the-fly file merger",
+    "homepage": "https://github.com/omgtehlion/jscollect",
+    "main": "lib/jscollect.js",
+    "bin": {
+        "jscollectd": "./jscollectd.js"
+    },
+    "version": "0.0.1",
+    "engines": {
+        "node": ">=0.4.0"
+    },
+    "dependencies": {
+        "esprima": "0.9.9"
+    },
+    "maintainers": [
+        {
+            "name": "Anton Drachev",
+            "email": "anton@drachev.com"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/omgtehlion/jscollect.git"
+    },
+    "licenses": [{
+        "type": "BSD",
+        "url": "https://github.com/omgtehlion/jscollect/raw/master/license.txt"
+    }]
+}
