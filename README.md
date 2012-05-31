@@ -1,6 +1,9 @@
 jscollect
 =========
 JS and CSS on-the-fly file merger
+
+Use `npm install jscollect` to get the latest version.
+
 ```
 Usage: jscollectd.js [OPTION]... [FILE]...
 Combines files referenced in FILEs into one big script or style.
