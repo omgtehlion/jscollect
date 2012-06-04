@@ -39,6 +39,29 @@ var contentTypes = {
     ".js": "text/javascript; charset=utf-8"
 }
 
+function writeError(ex, response, fileType) {
+    var message = ex.toString();
+    switch (fileType) {
+        case ".css":
+            response.write("body:after {" +
+                "display: block;" +
+                "background: #fff;" +
+                "position: absolute;" +
+                "left: 0; top: 0;" +
+                "z-index: 99999;" +
+                "color: #900;" +
+                "border: solid 2px #f00;" +
+                "padding: 10px;" +
+                "content: " + JSON.stringify(message) + ";" +
+            "}\n");
+            break;
+        default:
+            response.write("alert(" + JSON.stringify(message) + ");\n");
+            response.write("debugger;");
+            break;
+    }
+}
+
 function handleRequest(request, response) {
     try {
         var root = path.resolve(docrootOverride || request.headers["x-documentroot"]);
@@ -56,9 +79,7 @@ function handleRequest(request, response) {
             write: function(data, enc) { response.write(data, enc); }
         });
     } catch (ex) {
-        var message = ex.toString();
-        response.write("alert(" + JSON.stringify(message) + ");\n");
-        response.write("debugger;");
+        writeError(ex, response, path.extname(fPath));
         console.error(ex);
     }
     response.end();
