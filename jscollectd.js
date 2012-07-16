@@ -72,7 +72,8 @@ function handleRequest(request, response) {
         }
         response.writeHead(200, {
             "Content-Type": contentTypes[path.extname(fPath)],
-            "Cache-Control": "private, no-cache, no-store, proxy-revalidate, s-maxage=0"
+            "Cache-Control": "private, no-cache, no-store, must-revalidate, s-maxage=0",
+            "Expires": "Thu, 01 Jan 1970 00:00:00 GMT"
         });
         jscollect.process(fPath, {
             root: root,
