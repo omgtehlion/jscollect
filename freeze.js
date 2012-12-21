@@ -12,10 +12,6 @@ var urlfinder = require("./lib/urlfinder");
 
 /*=========================================================================*/
 
-var MY_NAME = "freeze.js";
-
-/*=========================================================================*/
-
 function freezeRemote(filePaths, remote, callback) {
     var urlObj = url.parse(remote, false, true);
     var basePath = urlObj.pathname + (urlObj.search || "");
@@ -158,7 +154,7 @@ function processFile(fPath, context) {
 /********************************************************************************/
 
 var usage = [
-    "Usage: " + MY_NAME + " [OPTION]... [FILE]...",
+    "Usage: " + path.basename(process.argv[1]) + " [OPTION]... [FILE]...",
     "Freezes images referenced in css FILE and updates references.",
     "",
     "Options:",
