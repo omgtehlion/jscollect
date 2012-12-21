@@ -29,7 +29,6 @@ location ~* \.(js|css)(\?.*)?$ {           # or other location of your js and cs
 
 Exit status is 0 if OK, 1 if there were problems.
 
-```
 Usage: freeze.js [OPTION]... [FILE]...
 Freezes images referenced in css FILE and updates references.
 
