@@ -18,7 +18,6 @@ var jscollect = require("./lib/jscollect");
 
 /*=========================================================================*/
 
-var MY_NAME = "jscollectd.js";
 var inServerMode = false;
 var ycssjsCompat = false;
 var serverPort;
@@ -89,7 +88,7 @@ function handleRequest(request, response) {
 /*=========================================================================*/
 
 var usage = [
-    "Usage: " + MY_NAME + " [OPTION]... [FILE]...",
+    "Usage: " + path.basename(process.argv[1]) + " [OPTION]... [FILE]...",
     "Combines files referenced in FILEs into one big script or style.",
     "Can be used on separate files or in server mode.",
     "",
@@ -151,7 +150,7 @@ for (var i = 0; i < args.length; i++) {
 if (inServerMode) {
     if (plainArgs.length > 0) {
         console.log("Input files are not allowed when running in server mode\n"+
-            "Try `" + MY_NAME + " --help' for more information.");
+            "Try `" + path.basename(process.argv[1]) + " --help' for more information.");
         process.exit(1);
     }
     var server = http.createServer(handleRequest);
