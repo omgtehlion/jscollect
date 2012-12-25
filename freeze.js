@@ -137,7 +137,9 @@ function processFile(fPath, context) {
     var parsedFile = urlfinder.getParsed(fPath);
 
     var candidates = parsedFile.filter(function(item) {
-        return !Buffer.isBuffer(item) && item.type === "url" && canHandle(item.url);
+        return !Buffer.isBuffer(item)
+            && (item.type === "url" || item.type === "imgLoader")
+            && canHandle(item.url);
     });
 
     var filePaths = {};
