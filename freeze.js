@@ -113,9 +113,13 @@ function writeFreezed(fPath, parsedFile, filePaths, context) {
         try {
             switch (item.type) {
                 case "url":
+                case "imgLoader":
                     var hash = filePaths[getAbsPath(item.url, context.root, fPath)];
                     var urlStr = (hash && hash.freezed) || item.url;
-                    context.write("url(" + urlStr + ")");
+                    if (item.type === "url")
+                        context.write("url(" + urlStr + ")");
+                    else
+                        context.write("'" + urlStr + "'");
                     break;
                 default:
                     throw item.type;
