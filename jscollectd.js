@@ -10,6 +10,7 @@
  * for license information see license.txt
  */
 
+var fs = require("fs");
 var http = require("http");
 var path = require("path");
 var url = require("url");
@@ -22,6 +23,7 @@ var inServerMode = false;
 var ycssjsCompat = false;
 var serverPort;
 var docrootOverride;
+var subst;
 
 /*=========================================================================*/
 
@@ -61,11 +63,23 @@ function writeError(ex, response, fileType) {
     }
 }
 
+function substitute(fPath) {
+    if (!subst)
+        return fPath;
+    var result = fPath.replace(subst[0], subst[1]);
+    try {
+        if (fs.statSync(result).isFile())
+            return result;
+    } catch (ex) { }
+    return fPath;
+}
+
 function handleRequest(request, response) {
     try {
         var root = path.resolve(docrootOverride || request.headers["x-documentroot"]);
         var reqUrl = url.parse(request.url);
         var fPath = path.resolve(root, "." + reqUrl.pathname);
+        fPath = substitute(fPath);
         if (ycssjsCompat) {
             fPath = normalizeYCssJs(fPath);
         }
@@ -97,6 +111,10 @@ var usage = [
     "  --docroot ROOT   override default document root:",
     "                     for separate files default is current directory",
     "                     for server mode default is value of X-DocumentRoot header",
+    "  --subst PAT:REP  replaces pattern PAT in input file name with replacement REP",
+    "                     valid only in server mode",
+    "                     replacement is executed only on file name, not the whole path",
+    "                     if substituted file does not exists then original file name used",
     "  --ycssjs         compatibility mode with YCssJs",
     "  -h, --help       display this help and exit",
     //"  --version        output version information and exit",
@@ -131,6 +149,13 @@ for (var i = 0; i < args.length; i++) {
             case "-docroot":
                 docrootOverride = args[++i];
                 break;
+            case "-subst":
+                subst = args[++i].split(':');
+                if (subst.length !== 2) {
+                    console.log("Error: invalid --subst argument, must be PATTERN:REPLACEMENT");
+                    process.exit(1);
+                }
+                break;
             case "-ycssjs":
                 ycssjsCompat = true;
                 break;
@@ -156,6 +181,10 @@ if (inServerMode) {
     var server = http.createServer(handleRequest);
     server.listen(serverPort);
 } else {
+    if (subst) {
+        console.log("Error: --subst flag is valid only in server mode");
+        process.exit(1);
+    }
     for (var i = 0; i < plainArgs.length; i++) {
         var fPath = plainArgs[i];
         if (ycssjsCompat) {
