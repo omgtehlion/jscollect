@@ -2,8 +2,21 @@ jscollect
 =========
 JS and CSS utils set
 
-jscollectd.js - on-the-fly file merger
-freeze.js - tool for "freeze" images in css.
+### What is included
+
+#### jscollectd.js
+On-the-fly file merger.
+
+This tool finds all calls of `include('path/to/a/file.js');` in your JavaScripts and embeds
+thier content in place of invocation.
+
+In CSS it will find all `@import('path/to/another.css')` statements and do the same thing.
+All paths to images and other resources will be rewritten accordingly.
+
+#### freeze.js
+Tool for “freezing” images in css files.
+
+### How to use
 
 Use `npm install jscollect` to get the latest version.
 
@@ -28,7 +41,9 @@ location ~* \.(js|css)(\?.*)?$ {           # or other location of your js and cs
 }
 
 Exit status is 0 if OK, 1 if there were problems.
+```
 
+```
 Usage: freeze.js [OPTION]... [FILE]...
 Freezes images referenced in css FILE and updates references.
 
@@ -41,3 +56,4 @@ Options:
   -h, --help          display this help and exit
 ,
 Exit status is 0 if OK, 1 if there were problems.
+```
