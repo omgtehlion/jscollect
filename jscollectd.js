@@ -10,22 +10,23 @@
  * for license information see license.txt
  */
 
-var fs = require("fs");
 var http = require("http");
 var path = require("path");
-var url = require("url");
 
-var jscollect = require("./lib/jscollect");
+var jscollect = require("./lib");
 
 /*=========================================================================*/
+
+var enc = "utf8";
 
 var inServerMode = false;
-var ycssjsCompat = false;
 var serverPort;
-var docrootOverride;
-var subst;
 
-/*=========================================================================*/
+var options = {
+    ycssjsCompat: undefined,
+    docrootOverride: undefined,
+    subst: undefined
+};
 
 function normalizeYCssJs(fPath) {
     var fDir = path.dirname(fPath);
@@ -33,70 +34,6 @@ function normalizeYCssJs(fPath) {
     if (fName.charAt(0) === '_')
         fPath = path.resolve(fDir, fName.substr(1));
     return fPath;
-}
-
-var contentTypes = {
-    ".css": "text/css; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8"
-}
-
-function writeError(ex, response, fileType) {
-    var message = ex.toString();
-    switch (fileType) {
-        case ".css":
-            response.write("body:after {" +
-                "display: block;" +
-                "background: #fff;" +
-                "position: absolute;" +
-                "left: 0; top: 0;" +
-                "z-index: 99999;" +
-                "color: #900;" +
-                "border: solid 2px #f00;" +
-                "padding: 10px;" +
-                "content: " + JSON.stringify(message) + ";" +
-            "}\n");
-            break;
-        default:
-            response.write("alert(" + JSON.stringify(message) + ");\n");
-            response.write("debugger;");
-            break;
-    }
-}
-
-function substitute(fPath) {
-    if (!subst)
-        return fPath;
-    var result = fPath.replace(subst[0], subst[1]);
-    try {
-        if (fs.statSync(result).isFile())
-            return result;
-    } catch (ex) { }
-    return fPath;
-}
-
-function handleRequest(request, response) {
-    try {
-        var root = path.resolve(docrootOverride || request.headers["x-documentroot"]);
-        var reqUrl = url.parse(request.url);
-        var fPath = path.resolve(root, "." + reqUrl.pathname);
-        fPath = substitute(fPath);
-        if (ycssjsCompat) {
-            fPath = normalizeYCssJs(fPath);
-        }
-        response.writeHead(200, {
-            "Content-Type": contentTypes[path.extname(fPath)],
-            "Cache-Control": "private, no-cache, no-store, must-revalidate, s-maxage=0",
-            "Expires": "Thu, 01 Jan 1970 00:00:00 GMT"
-        });
-        jscollect.process(fPath, {
-            root: root,
-            write: function(data, enc) { response.write(data, enc); }
-        });
-    } catch (ex) {
-        writeError(ex, response, path.extname(fPath));
-        console.error(ex);
-    }
-    response.end();
 }
 
 /*=========================================================================*/
@@ -114,7 +51,7 @@ var usage = [
     "  --subst PAT:REP  replaces pattern PAT in input file name with replacement REP",
     "                     valid only in server mode",
     "                     replacement is executed only on file name, not the whole path",
-    "                     if substituted file does not exists then original file name used",
+    "                     if substituted file does not exists then original file is used",
     "  --ycssjs         compatibility mode with YCssJs",
     "  -h, --help       display this help and exit",
     //"  --version        output version information and exit",
@@ -147,17 +84,18 @@ for (var i = 0; i < args.length; i++) {
                 serverPort = parseInt(args[++i]);
                 break;
             case "-docroot":
-                docrootOverride = args[++i];
+                options.docrootOverride = args[++i];
                 break;
             case "-subst":
-                subst = args[++i].split(':');
+                var subst = args[++i].split(':');
                 if (subst.length !== 2) {
                     console.log("Error: invalid --subst argument, must be PATTERN:REPLACEMENT");
                     process.exit(1);
                 }
+                options.subst = subst;
                 break;
             case "-ycssjs":
-                ycssjsCompat = true;
+                options.ycssjsCompat = normalizeYCssJs;
                 break;
             case "h":
             case "-help":
@@ -178,20 +116,36 @@ if (inServerMode) {
             "Try `" + path.basename(process.argv[1]) + " --help' for more information.");
         process.exit(1);
     }
-    var server = http.createServer(handleRequest);
+    var mw = jscollect.middleware(options);
+    var server = http.createServer(function(req, res) {
+        try {
+            mw(req, res, next);
+        } catch(ex) {
+            next(ex);
+        }
+        function next(err) {
+            if (err) {
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                res.end(err);
+            } else if (!res.headerSent) {
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.end("File " + req.url + " not found");
+            }
+        };
+    });
     server.listen(serverPort);
 } else {
-    if (subst) {
+    if (options.subst) {
         console.log("Error: --subst flag is valid only in server mode");
         process.exit(1);
     }
     for (var i = 0; i < plainArgs.length; i++) {
         var fPath = plainArgs[i];
-        if (ycssjsCompat) {
-            fPath = normalizeYCssJs(fPath);
+        if (options.ycssjsCompat) {
+            fPath = options.ycssjsCompat(fPath);
         }
         jscollect.process(fPath, {
-            root: docrootOverride || process.cwd(),
+            root: options.docrootOverride || process.cwd(),
             write: function(data, enc) { process.stdout.write(data, enc); }
         });
     }

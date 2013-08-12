@@ -2,7 +2,7 @@
     "name": "jscollect",
     "description": "JS and CSS on-the-fly file merger",
     "homepage": "https://github.com/omgtehlion/jscollect",
-    "main": "lib/jscollect.js",
+    "main": "lib/index.js",
     "bin": {
         "jscollectd": "./jscollectd.js"
     },
