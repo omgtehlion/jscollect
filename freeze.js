@@ -72,7 +72,12 @@ function calcHash(filePath) {
     // url-safe: http://www.faqs.org/rfcs/rfc3548.html
     digest = digest.replace(/\+/g, "-").replace(/\//g, "_");
     // strip leading '-' and '+'
-    return digest.replace(/^[-+]+/, "");
+    digest.replace(/^[-+]+/, "");
+    // replaces from blacklist
+    for (var key in context.blacklist) {
+        digest.split(key).join(context.blacklist[key])
+    }
+    return digest;
 }
 
 function getAbsPath(urlStr, root, relativeTo) {
@@ -164,10 +169,11 @@ var usage = [
     "Freezes images referenced in css FILE and updates references.",
     "",
     "Options:",
-    "  -r, --remote URL    specify remote server location where to check image location",
-    "  -l, --local PREFIX  specify local directory to freeze images into",
-    "  -d, --docroot ROOT  override default document root:",
-    "                        default is current directory",
+    "  -r, --remote URL         specify remote server location where to check image location",
+    "  -l, --local PREFIX       specify local directory to freeze images into",
+    "  -d, --docroot ROOT       override default document root",
+    "                           default is current directory",
+    "  -b, --blacklist TEMPLATE blacklist. Example :cat:dog:red:: - cat will replace to dog, and red to 2",
     "  --ycssjs            compatibility mode with YCssJs",
     "  -h, --help          display this help and exit",
     "",
@@ -194,6 +200,14 @@ for (var i = 0; i < args.length; i++) {
                 context.remote = args[++i];
                 if (context.remote.charAt(context.remote.length - 1) !== '/') {
                     context.remote += '/';
+                }
+                break;
+            case "b":
+            case "-blacklist":
+                var blacklistArr = args[++i].split(":")
+                var context.blacklist = {}
+                for (var i=0; i < blacklistArr.length; i+=2) {
+                    context.blacklist[blacklistArr[i]] = blacklistArr[i + 1] || i/2
                 }
                 break;
             case "l":
