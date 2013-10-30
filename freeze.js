@@ -72,11 +72,11 @@ function calcHash(filePath) {
     // url-safe: http://www.faqs.org/rfcs/rfc3548.html
     digest = digest.replace(/\+/g, "-").replace(/\//g, "_");
     // strip leading '-' and '+'
-    digest.replace(/^[-+]+/, "");
+    digest = digest.replace(/^[-+]+/, "");
     // replaces from blacklist
-    for (var key in context.blacklist) {
-        digest.split(key).join(context.blacklist[key])
-    }
+    context.blacklist.forEach(function(itm) {
+        digest = digest.replace(itm.tmpl, itm.repl)
+    });
     return digest;
 }
 
@@ -173,7 +173,7 @@ var usage = [
     "  -l, --local PREFIX       specify local directory to freeze images into",
     "  -d, --docroot ROOT       override default document root",
     "                           default is current directory",
-    "  -b, --blacklist TEMPLATE blacklist. Example :cat:dog:red:: - cat will replace to dog, and red to 2",
+    "  -b, --blacklist TEMPLATE blacklist. Example cat:dog,red - cat will replace to dog, and red to 2",
     "  --ycssjs            compatibility mode with YCssJs",
     "  -h, --help          display this help and exit",
     "",
@@ -187,6 +187,17 @@ if (args.length === 0) {
 }
 
 var context = {};
+context.blacklist = [{
+        repl: "~~",
+        tmpl: /xxx/i
+    }, {
+        repl: "..",
+        tmpl: /adv/i
+    }, {
+        repl: ".~",
+        tmpl: /ads/i
+    }
+]
 context.write = function(data, enc) { process.stdout.write(data, enc); };
 var inFile = "";
 
@@ -204,10 +215,14 @@ for (var i = 0; i < args.length; i++) {
                 break;
             case "b":
             case "-blacklist":
-                var blacklistArr = args[++i].split(":")
-                var context.blacklist = {}
-                for (var i=0; i < blacklistArr.length; i+=2) {
-                    context.blacklist[blacklistArr[i]] = blacklistArr[i + 1] || i/2
+                var blacklistArr = args[++i].split(",")
+                context.blacklist = []
+                for (var i=0; i < blacklistArr.length; i++) {
+                    var item = blacklistArr[i].split()
+                    context.blacklist.push({
+                        repl: item[1] || i,
+                        tmpl: RegExp(item[0], "i")
+                    });
                 }
                 break;
             case "l":
