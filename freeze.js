@@ -189,13 +189,13 @@ if (args.length === 0) {
 var context = {};
 context.blacklist = [{
         repl: "~~",
-        tmpl: /xxx/i
+        tmpl: new RegExp("xxx", "gi")
     }, {
         repl: "..",
-        tmpl: /adv/i
+        tmpl: new RegExp("adv", "gi")
     }, {
         repl: ".~",
-        tmpl: /ads/i
+        tmpl: new RegExp("ads", "gi")
     }
 ]
 context.write = function(data, enc) { process.stdout.write(data, enc); };
@@ -221,7 +221,7 @@ for (var i = 0; i < args.length; i++) {
                     var item = blacklistArr[i].split()
                     context.blacklist.push({
                         repl: item[1] || i,
-                        tmpl: RegExp(item[0], "i")
+                        tmpl: new RegExp(item[0], "gi")
                     });
                 }
                 break;
