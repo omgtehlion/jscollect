@@ -72,7 +72,12 @@ function calcHash(filePath) {
     // url-safe: http://www.faqs.org/rfcs/rfc3548.html
     digest = digest.replace(/\+/g, "-").replace(/\//g, "_");
     // strip leading '-' and '+'
-    return digest.replace(/^[-+]+/, "");
+    digest = digest.replace(/^[-+]+/, "");
+    // replaces from blacklist
+    context.blacklist.forEach(function(itm) {
+        digest = digest.replace(itm.tmpl, itm.repl)
+    });
+    return digest;
 }
 
 function getAbsPath(urlStr, root, relativeTo) {
@@ -164,10 +169,11 @@ var usage = [
     "Freezes images referenced in css FILE and updates references.",
     "",
     "Options:",
-    "  -r, --remote URL    specify remote server location where to check image location",
-    "  -l, --local PREFIX  specify local directory to freeze images into",
-    "  -d, --docroot ROOT  override default document root:",
-    "                        default is current directory",
+    "  -r, --remote URL         specify remote server location where to check image location",
+    "  -l, --local PREFIX       specify local directory to freeze images into",
+    "  -d, --docroot ROOT       override default document root",
+    "                           default is current directory",
+    "  -b, --blacklist TEMPLATE blacklist. Example cat:dog,red - cat will replace to dog, and red to 2",
     "  --ycssjs            compatibility mode with YCssJs",
     "  -h, --help          display this help and exit",
     "",
@@ -181,6 +187,17 @@ if (args.length === 0) {
 }
 
 var context = {};
+context.blacklist = [{
+        repl: "~~",
+        tmpl: new RegExp("xxx", "gi")
+    }, {
+        repl: "..",
+        tmpl: new RegExp("adv", "gi")
+    }, {
+        repl: ".~",
+        tmpl: new RegExp("ads", "gi")
+    }
+]
 context.write = function(data, enc) { process.stdout.write(data, enc); };
 var inFile = "";
 
@@ -194,6 +211,18 @@ for (var i = 0; i < args.length; i++) {
                 context.remote = args[++i];
                 if (context.remote.charAt(context.remote.length - 1) !== '/') {
                     context.remote += '/';
+                }
+                break;
+            case "b":
+            case "-blacklist":
+                var blacklistArr = args[++i].split(",")
+                context.blacklist = []
+                for (var i=0; i < blacklistArr.length; i++) {
+                    var item = blacklistArr[i].split()
+                    context.blacklist.push({
+                        repl: item[1] || i,
+                        tmpl: new RegExp(item[0], "gi")
+                    });
                 }
                 break;
             case "l":
