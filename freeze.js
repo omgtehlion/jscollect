@@ -67,12 +67,10 @@ function canHandle(urlStr) {
 function processBlacklist(input, context) {
     if (!context.blacklist)
         return input;
-    for (var i = 0; i < context.blacklist.length; i++) {
-        var item = context.blacklist[i];
-        if (item) {
+    context.blacklist.forEach(function(item, i) {
+        if (item)
             input = input.replace(item, "~" + i);
-        }
-    }
+    });
     return input;
 }
 
@@ -167,9 +165,7 @@ function processFile(fPath, context) {
     });
 
     if (context.remote) {
-        freezeRemote(filePaths, context.remote, function() {
-            step2();
-        });
+        freezeRemote(filePaths, context.remote, step2);
     } else {
         step2();
     }
