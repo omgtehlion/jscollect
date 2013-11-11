@@ -64,6 +64,18 @@ function canHandle(urlStr) {
     return !((urlStr.lastIndexOf("//", 0) === 0) || /^\w+:/.test(urlStr));
 }
 
+function processBlacklist(input, context) {
+    if (!context.blacklist)
+        return input;
+    for (var i = 0; i < context.blacklist.length; i++) {
+        var item = context.blacklist[i];
+        if (item) {
+            input = input.replace(item, "~" + i);
+        }
+    }
+    return input;
+}
+
 function calcHash(filePath) {
     var hash = crypto.createHash("sha1");
     hash.update(fs.readFileSync(filePath));
@@ -73,10 +85,6 @@ function calcHash(filePath) {
     digest = digest.replace(/\+/g, "-").replace(/\//g, "_");
     // strip leading '-' and '+'
     digest = digest.replace(/^[-+]+/, "");
-    // replaces from blacklist
-    context.blacklist.forEach(function(itm) {
-        digest = digest.replace(itm.tmpl, itm.repl)
-    });
     return digest;
 }
 
@@ -152,14 +160,24 @@ function processFile(fPath, context) {
         var itemPath = getAbsPath(item.url, context.root, fPath);
         if (!filePaths[itemPath] && fs_fileExistsSync(itemPath)) {
             var hash = calcHash(itemPath);
+            // run through blacklist
+            hash = processBlacklist(hash, context);
             filePaths[itemPath] = { hash: hash, hashedName: hash + path.extname(itemPath) };
         }
     });
 
-    freezeRemote(filePaths, context.remote, function() {
+    if (context.remote) {
+        freezeRemote(filePaths, context.remote, function() {
+            step2();
+        });
+    } else {
+        step2();
+    }
+
+    function step2() {
         freezeLocal(filePaths, context.local, fPath, context);
         writeFreezed(fPath, parsedFile, filePaths, context);
-    });
+    }
 }
 
 /********************************************************************************/
@@ -169,13 +187,14 @@ var usage = [
     "Freezes images referenced in css FILE and updates references.",
     "",
     "Options:",
-    "  -r, --remote URL         specify remote server location where to check image location",
-    "  -l, --local PREFIX       specify local directory to freeze images into",
-    "  -d, --docroot ROOT       override default document root",
-    "                           default is current directory",
-    "  -b, --blacklist TEMPLATE blacklist. Example cat:dog,red - cat will replace to dog, and red to 2",
-    "  --ycssjs            compatibility mode with YCssJs",
-    "  -h, --help          display this help and exit",
+    "  -r, --remote URL      specify remote server location where to check image location",
+    "  -l, --local PREFIX    specify local directory to freeze images into",
+    "  -d, --docroot ROOT    override default document root",
+    "                          default is current directory",
+    "  -b, --blacklist LIST  blacklist of substrings to avoid in freezed URLs",
+    "                          example: foo,bar,baz",
+    "  --ycssjs              compatibility mode with YCssJs",
+    "  -h, --help            display this help and exit",
     "",
     "Exit status is 0 if OK, 1 if there were problems.",
 ].join('\n');
@@ -186,18 +205,17 @@ if (args.length === 0) {
     process.exit(0);
 }
 
-var context = {};
-context.blacklist = [{
-        repl: "~~",
-        tmpl: new RegExp("xxx", "gi")
-    }, {
-        repl: "..",
-        tmpl: new RegExp("adv", "gi")
-    }, {
-        repl: ".~",
-        tmpl: new RegExp("ads", "gi")
-    }
-]
+function buildBlacklist(patterns) {
+    return patterns.map(function(str) {
+        return str && new RegExp(str, "gi");
+    });
+}
+
+var context = {
+    blacklist: buildBlacklist(["xxx", "adv", "ads"]),
+    local: ""
+};
+
 context.write = function(data, enc) { process.stdout.write(data, enc); };
 var inFile = "";
 
@@ -215,15 +233,8 @@ for (var i = 0; i < args.length; i++) {
                 break;
             case "b":
             case "-blacklist":
-                var blacklistArr = args[++i].split(",")
-                context.blacklist = []
-                for (var i=0; i < blacklistArr.length; i++) {
-                    var item = blacklistArr[i].split()
-                    context.blacklist.push({
-                        repl: item[1] || i,
-                        tmpl: new RegExp(item[0], "gi")
-                    });
-                }
+                var blacklistSrc = args[++i].split(",")
+                context.blacklist = buildBlacklist(blacklistSrc);
                 break;
             case "l":
             case "-local":
