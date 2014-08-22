@@ -38,6 +38,7 @@ location ~* \.(js|css)(\?.*)?$ {           # or other location of your js and cs
     proxy_pass http://localhost:PORT       # change PORT to what you’ve specified in --port
     proxy_set_header X-DocumentRoot $root; # $root should be set to your document root
     gzip off                               # we don’t need gzip in development anyways
+    proxy_buffering off                    # this helps with large compiled files
 }
 
 Exit status is 0 if OK, 1 if there were problems.
